@@ -4,7 +4,7 @@ from database import Base, engine, SessionLocal
 import crud, schemas
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
-
+    
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sistema REI DOS METAIS")
