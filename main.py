@@ -9,9 +9,18 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sistema REI DOS METAIS")
 
+# Lista explícita de orígenes permitidos
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://reidosmetais.mindcube.cloud", # Tu frontend seguro
+    "http://reidosmetais.mindcube.cloud"   # Tu frontend (por si entran sin https)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,  # <--- Usamos la lista, no el asterisco
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
