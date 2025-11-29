@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional # <--- IMPORTANTE: Importamos Optional
 from datetime import datetime
 
 # --- Clientes ---
@@ -52,8 +52,9 @@ class VentaResponse(BaseModel):
     fecha: datetime
     total: float
     forma_de_pago: str
-    cliente: ClienteResponse
-    detalles: List[DetalleVentaResponse] # Detalle anidado
+    # CAMBIO CRÍTICO AQUÍ: Ahora el cliente es opcional (= None)
+    cliente: Optional[ClienteResponse] = None 
+    detalles: List[DetalleVentaResponse] 
 
     class Config:
         orm_mode = True

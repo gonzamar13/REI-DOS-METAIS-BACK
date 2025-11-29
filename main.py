@@ -9,18 +9,19 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sistema REI DOS METAIS")
 
-# Lista explícita de orígenes permitidos
+# Lista explícita de orígenes permitidos (CORS Correcto)
 origins = [
     "http://localhost",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://reidosmetais.mindcube.cloud", # Tu frontend seguro
-    "http://reidosmetais.mindcube.cloud"   # Tu frontend (por si entran sin https)
+    "https://reidosmetais.mindcube.cloud", # Frontend HTTPS
+    "http://reidosmetais.mindcube.cloud",  # Frontend HTTP
+    "https://back.mindcube.cloud"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # <--- Usamos la lista, no el asterisco
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -60,7 +61,7 @@ def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
     if not c: raise HTTPException(404, "Cliente no encontrado")
     return {"message": "Cliente eliminado"}
 
-# --- PRODUCTOS (Antes Servicios) ---
+# --- PRODUCTOS ---
 @app.post("/productos/", response_model=schemas.ProductoResponse)
 def crear_producto(producto: schemas.ProductoCreate, db: Session = Depends(get_db)):
     return crud.crear_producto(db, producto)
@@ -94,14 +95,16 @@ def crear_venta(venta: schemas.VentaCreate, db: Session = Depends(get_db)):
 
 @app.get("/ventas/", response_model=List[schemas.VentaResponse])
 def listar_ventas(db: Session = Depends(get_db)):
-    # Aquí se transforman los datos para que coincidan con el esquema de respuesta complejo
     ventas = crud.listar_ventas(db)
     resultado = []
+    
+    # Transformación manual con protección contra datos nulos (clientes/productos borrados)
     for v in ventas:
         detalles_resp = []
         for d in v.detalles:
             detalles_resp.append({
-                "producto_nombre": d.producto.nombre if d.producto else "Borrado",
+                # Protección: Si el producto se borró, mostramos "Borrado"
+                "producto_nombre": d.producto.nombre if d.producto else "Producto Eliminado",
                 "cantidad": d.cantidad,
                 "precio_unitario": d.precio_unitario,
                 "subtotal": d.subtotal
@@ -112,7 +115,8 @@ def listar_ventas(db: Session = Depends(get_db)):
             "fecha": v.fecha,
             "total": v.total,
             "forma_de_pago": v.forma_de_pago,
-            "cliente": v.cliente,
+            # Protección: Si el cliente se borró, pasamos None (gracias al cambio en schemas.py)
+            "cliente": v.cliente if v.cliente else None,
             "detalles": detalles_resp
         })
     return resultado
